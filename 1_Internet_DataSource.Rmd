@@ -1,0 +1,239 @@
+---
+title: 'Introduction to Web Mining for Social Scientists'
+subtitle: 'Lecture 1: The Internet as a Data Source for Social Science Research'
+author: "Ulrich Matter"
+date: "20/09/2017"
+output:
+  html_document:
+    highlight: tango
+    theme: cerulean
+header-includes:
+- \usepackage[T1]{fontenc}
+- \usepackage{hyperref}
+css: ../../style/notes.css
+bibliography: ../references/webmining.bib
+---
+
+
+```{r set-options, echo=FALSE, cache=FALSE}
+options(width = 100)
+library(knitr)
+library(bookdown)
+```
+
+# Introduction: Data from the Web
+
+The diffusion of the Internet has led to a stark increase in the
+availability of digital data describing all kind of every-day human
+activities [@edelman_2012; @einav_levin2014; @matter_stutzer2015]. The dawn of such web-based big data offers various opportunities for empirical research in economics and the social sciences in general. While web (data) mining has for many years rather been a discipline within computer science with a focus on web application development (such as [recommender systems](https://en.wikipedia.org/wiki/Recommender_system) and [search
+engines](https://en.wikipedia.org/wiki/Web_search_engine)), the recent rise in well-documented open-source tools to automatically collect data from the web makes this endeavor more accessible for researchers without a background in web technologies. Web mining has recently been the basis for studies in various fields such as labor economics, finance, marketing, political science, as well as
+sociology.
+
+The collection and preparation of web data for research purposes also poses new challenges for social scientists. Web data often comes in unusual or unsuitable formats for statistical analysis. For example, the table depicted in Figure \@ref(fig:swiss) (observed on [Wikipedia's Economy of Switzerland page](https://en.wikipedia.org/wiki/Economy_of_Switzerland)), is easy to read and understand for the human eye as it appears on the screen.
+
+
+```{r swiss, echo=FALSE, out.width = "50%", fig.align='center', fig.cap= "(ref:capswiss)"}
+include_graphics("../img/1_SwissGDP.png")
+```
+
+(ref:capswiss) Source: https://en.wikipedia.org/wiki/Economy_of_Switzerland.
+
+However, if we were to use this data for an analysis or a visualization, we would like to have the raw data provided in this document. The data contained in the *source code* of the website (written in the [Hypertext Markup Language (HTML)](https://en.wikipedia.org/wiki/HTML)) looks like this (middle rows omitted):
+
+
+
+```{html}
+<table class="wikitable">
+<tbody>
+<tr>
+<th>Year</th>
+<th>Gross Domestic Product(billions of Swiss Francs)</th>
+<th>US Dollar Exchange</th>
+</tr>
+<tr>
+<td>1980</td>
+<td>184</td>
+<td>1.67 Francs</td>
+</tr>
+...
+<tr>
+<td>2015</td>
+<td>646</td>
+<td>0.96 Francs</td>
+</tr>
+</tbody>
+</table>
+```
+
+The software applications we commonly use to read websites, so-called [web browsers](https://en.wikipedia.org/wiki/Web_browser), are designed to *render* (i.e., parse/translate/visualize) HTML code for the human eye (e.g., visualizing the information contained in the jibberish code above as something more easily digestible). Thus, we commonly search, consume, and collect information stored somewhere on the Internet by means of an application that is optimized for human users clicking their way through a graphical interface. But what if we want to analyze and visualize such data?
+
+A basic understanding of web technologies in combination with some freely available software packages for the statistical computing environment (and programming language) [R](https://www.r-project.org/) empower us to automatically download, parse, and store web data in formats favorable for data analysis. Thereby, what happens 'under the hood' in our computer is not that different from what happens when we access the same data on the web with a browser. However, we have full control of what part of the data we access, and how we parse, format, store, and eventually analyze it. The following few lines of R code constitute a very simple example of what can be done (note the comments documenting what each line does).
+
+```{r}
+# install and load the necessary R package
+#install.packages("rvest") # if not installed yet
+library(xml2)
+library(rvest)
+
+# 1) fetch and parse the website, save the parsed website in a variable called 'swiss_econ'
+swiss_econ <- read_html("https://en.wikipedia.org/wiki/Economy_of_Switzerland")
+# 2) extract the html node containing the table
+swiss_tab <- html_node(swiss_econ, xpath = "//*[@id='mw-content-text']/div/table[3]")
+# 3) extract the table as a data-frame (a table-like R object)
+swiss_tab <- html_table(swiss_tab)
+# look at table (in R)
+swiss_tab
+# plot data (ajdusting axes labels)
+plot(x =swiss_tab$Year, y = swiss_tab$`Gross Domestic Product(billions of Swiss Francs)`,
+     xlab = "Year",
+     ylab = "GDP (billions of Swiss Francs)")
+
+
+```
+
+While this very basic example has only limited advantages over a 'manual' approach to extracting the data of interest, it already contains the core aspects of *web data mining* (or *web automation*, *web scraping*). The few lines of code contain the core tasks we have to deal with when programmatically collecting data from the Web:
+
+ 1. Communicating with the (physical) data source (the [web server](https://en.wikipedia.org/wiki/Web_server)). That is, programmatically requesting information from a particular website and handling the returned raw web data.
+ 2. Locating and extracting the data of interest from the document that constitutes the website.
+ 3. Serializing/reformatting the extracted data for further processing (analysis, visualization, storage).
+
+Developing a basic understanding of these tasks as well as the practical skills necessary to perform them in simple applications is at the heart of this course. In order to get a better idea of why the acquisition of these skills can be of great interest to economists, social scientists, entrepreneurs, and responsible citizens in general, it is imperative to first have a closer look at what the Internet (and the [World Wide Web](https://en.wikipedia.org/wiki/World_Wide_Web)) is and how it 'works'. Particularly, we need (i) a basic comprehension of the physical and technological dimension of the Internet in order to understand practical web data mining techniques and (ii) insights into the human and social dimension of the Web's content and the production thereof in order to appreciate the opportunities web data mining provides to enrich our knowledge about the economy and society at large.
+
+
+# The Internet: Physical and Technological Layer
+The Internet is fundamentally a network of small local physical networks of computers (connected via copper cables, fibre optic cables, or radio waves). Figure \@ref(fig:localnetwork) illustrates the scheme of a local network typically encountered in a private home. By having a computer connected to the Internet in your home, your local network, potentially consisting of your laptop, phone, printer, modem, and router, is becoming a part of this large network of networks.
+
+```{r localnetwork, echo=FALSE, out.width = "75%", fig.align='center', fig.cap= "(ref:capnetwork)"}
+include_graphics("../img/homenetworkdiagram_lucidchart.png")
+```
+
+(ref:capnetwork) Illustration of a home network (WLAN). Source: https://www.lucidchart.com.
+
+So called [Internet Service Providers (ISP)](https://en.wikipedia.org/wiki/Internet_service_provider) serve as hubs, connecting many of the smaller local networks. In order to get Internet access at home, one usually subscribes with an ISP which connects the home network via cable TV, phone line, or optical fiber to the rest of the Internet. Larger network infrastructure is then connecting different ISPs, across country boarders and even across the oceans (see Figure \@ref(fig:submarine), illustrating the submarine cables rolled out on the bottom of the oceans).
+
+
+```{r submarine, echo = FALSE, out.width = "75%", fig.align='center', fig.cap="(ref:capsubmarine)"}
+include_graphics("../img/World_map_of_submarine_cables.png")
+```
+
+(ref:capsubmarine) World map of submarine cables. Source: https://en.wikipedia.org/wiki/Internet#/media/File:World_map_of_submarine_cables.png.
+
+
+[Routers](https://en.wikipedia.org/wiki/Router_(computing)) are the central nodes in most parts of the Internet, connecting different devices and managing the data traffic between them. In order for routers to work properly, each computer/device in the network (and the Internet overal) needs a standardized address, i.e., the [IP (Internet Protocol)](https://en.wikipedia.org/wiki/Internet_Protocol) address that uniquely identifies it in the network. Usually the local router in our home assigns IP addresses that are valid within the local network, and the router itself has an IP address that identifies it in the outside world (in other parts of the Internet).^[IP addresses are assigned following the [Dynamic Host Configuration Protocol (DHCP)](https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol).] IP addresses are so far based on four numbers (IPv4) with 8 bits each (values of 0 to 255 in decimal), e.g.:207.142.131.235.^[Due to the insufficient amount of possible unique numbers in this system, it is about to be extended to IPv6 (eight numbers with 16 bits each).]  A typical IP address looks something like this:  `216.58.219.196`. In order to request a document (i.e., a website) from a computer in the Internet we would thus have to know this computer's IP address. Fortunately, the [Domain Name System (DNS)](https://en.wikipedia.org/wiki/Domain_Name_System) does the the address 'look up' for us by translating [URLs](https://en.wikipedia.org/wiki/URL) (e.g., www.google.com) to IP addresses.
+
+We can demonstrate this in the (Mac OS) terminal by calling a program called `nslookup` (for 'Name Server look up') in order to look up the IP-address of the server with the domain `www.google.com`.^[The same command is also available on Windows machines with identical or very similar usage in the Windows (DOS) command line (depending on the Windows version). See https://www.computerhope.com/nslookup.htm for details.]
+
+```{bash}
+nslookup www.google.com
+```
+
+The first two lines refer to the local DNS server. The last line of the response gives us the IP address of one of Google's servers. When typing an URL into the address bar of a web browser, the same is essentially happening 'under the hood'.
+
+As the Internet is a large network consisting of various small local networks, requesting data from a particular website means sending data packets from your local network via several routers to a machine in another physical local network (potentially far away). Again, we can make use of our computer to illustrate this point. By means of the application `traceroute` we record what nodes—usually routers with an IP address—the data packet passes through in order to reach the website/server behind the domain (in this example, the homepage of Harvard University).^[Note that the code shown below runs on a Mac or Linux terminal. Use `tracert google.com` on Windows (DOS).]
+
+```{bash}
+traceroute www.harvard.edu
+```
+
+As IP-addresses can be mapped to geographical locations (to a certain degree of precision), we can actually trace the data packet we are sending through the Internet on a map. See, e.g., https://stefansundin.github.io/traceroute-mapper/ for mapping of traceroute terminal output (example in Figure \@ref(fig:traceroute)) or http://www.dnstools.ch/visual-traceroute.html for host traceroute.
+
+```{r traceroute, echo= FALSE, out.width= "75%", fig.align="center", fig.cap="(ref:captraceroute)"}
+include_graphics("../img/traceroute_map.png")
+```
+
+(ref:captraceroute) Map illustrating the route the data packets took to reach www.harvard.edu. Source: https://stefansundin.github.io/traceroute-mapper/.
+
+Simply contacting a server in the Internet needs only very little data to be transmitted. Commonly, we transfer/download a lot of data when using the Internet, though. If the data to be transferred between two devices on the Internet is larger than one packet, the devices, following the [TCP (Transmission Control Protocol)](https://en.wikipedia.org/wiki/Transmission_Control_Protocol) is splitting the data into pieces and ensures that all pieces arrive at the destination. Thus the receiver recognizes due to TCP that a part is missing and will ask the sender to resend it. Each packet (piece) is thus labeled with a number and the receiver checks whether all the numbers have arrived in order to make sure the data is complete.
+
+<!-- ## Advanced topics -->
+<!--  - [Ports](https://en.wikipedia.org/wiki/Port_(computer_networking)): Data packets can be labelled with an additional number called port ('port number'). The computer receiving the packets can then differentiate what application a  -->
+<!--    packet is meant for. Standard ports include: -->
+<!--     - 21 FTP, for file transfers -->
+<!--     - 22 SSH, secure shell, to run commands on another computer -->
+<!--     - 25 SMTP, for sending email -->
+<!--     - 53 DNS -->
+<!--     - 80 HTTP, for visiting websites -->
+<!--     - 443 HTTPS, for visiting secure website -->
+
+<!--  - [Firewalls](https://en.wikipedia.org/wiki/Firewall_(computing)): A network security system that keeps specific packets out to block access, or in to prevent sensitive information from leaving. Firewalls can block packets with specific addresses or block all trafic on a certain port. -->
+<!--  - [VPN (Virtual Private Network)](https://en.wikipedia.org/wiki/Virtual_private_network): An ecrypted tunnel through which traffic is routed first, before being sent out to the internet. -->
+
+
+## Links to economic and social science research
+Already at this very basic level (not even considering the contents yet), we can use our computers to systematically explore and measure certain aspects the Internet. While a lot of scientific work exploring the physical dimension of the Internet is located in engineering and computer science, some social scientists are exploiting these opportunities in various ways in their research. The following account of these contributions is only meant to be exemplary and does not attempt to fully cover this literature.
+
+### The Internet and the Economy (geo-coded IP addresses)
+@ackermann_etal2017 present a method to join large data sets on IP activity data with geo-location data, generating a large and highly granular panel data set on Internet activity (number of currently active IP addresses ~ number of currently connected devices). They use this data set to study, inter alia, how Internet activity is locally correlated with economic activity (e.g., measured by regional GDP per capita, see Figure \@ref(fig:ackermann)).
+
+```{r ackermann, echo = FALSE, fig.align="center", fig.cap="(ref:capackermann)", out.width="50%"}
+include_graphics("../img/inet_econ.png")
+```
+
+(ref:capackermann) Internet access and economic outcomes at the sub-national level: GDP per capita versus IP addresses per capita. Source: @ackermann_etal2017.
+
+Note how this research project builds—arguably in a very sophisticated manner—on the very simple idea of 'scanning' the physical Internet for connected devices and recording their IP addresses with a time stamp (here, the data is just describing the size/activity of the Internet, actual content is not part of it). Other projects by the same authors and based on the same data set include, for example, an investigation of [global sleep patterns](http://www.one-trillion.org/sleep/) and the [diffusion of the Internet](http://www.one-trillion.org/diffusion/).
+
+
+### Mapping Local Internet Control (domestic networks of ISPs)
+@roberts_etal2011 present a method for mapping national networks of the central nodes (ISPs and other large organizations) that "are responsible for routing traffic both within the larger Internet and within their own networks and as such act as points of technical and political control of the Internet." In simple terms, they use data on how packets travel within a national network and between national networks (keeping track of the IP numbers). This way the researchers can assess the number and size of the central nodes through which a country's Internet traffic (both within and to the outside Internet) flows, giving an idea of how political control over the domestic Internet can be exerted.^[The researchers also provide [a website](http://cyber.harvard.edu/netmaps/geo_map_home.php) with network diagrams and additional statistics based on their method for various countries.] Figure \@ref(fig:roberts) shows exemplary how the resulting network diagrams look like for China and Russia.
+
+```{r roberts, echo= FALSE, fig.align="center", out.width = "50%", fig.cap="(ref:caproberts)"}
+include_graphics("../img/local_inet_control.png")
+```
+
+(ref:caproberts) Autonomous System Diagrams of China (top) and Russia (bottom). The nodes of the graphs represent important nodes of the domestic Internet (usually ISPs), red nodes indicating the 'points of control' (the most central and important nodes in the domestic network). The large black edges symbolize the 'outside Internet', i.e, all nodes taken together that are outside the domestic network). Source: @roberts_etal2011.
+
+The authors then discuss how the different attempts/strategies by the respective regimes to control and censor the Internet in China and Russia could be explained by the differences in the physical topology of the domestic networks revealed in this analysis. The Chinese government has since the dawn of the Internet tightly controlled the development of the domestic network, resulting in a few central and state controlled ISPs processing large parts of the traffic. This structure facilitates a highly sophisticated and effective control and censorship of the Internet in China. The network in Russia, on the other hand, has grown much more independently of state control after the implosion of the Soviet Union, leading to a very different physical topology of the domestic network (potentially making it harder to launch a China-like government surveillance program of the Russian Internet). This might explain that the Russian regime rather relies on well-trained hacker groups to suppress anti-government activities in the Russian web than having a large centralized government surveillance and censorship program in place. As in the example above, this research project simply exploits the idea of 'measuring' the physical dimension of the Internet by sending data packets through it and recording what route they are taking.
+
+# The World Wide Web's Content: Human and Social Layer
+So far, we've only looked at the Internet as a physical/technological entity, a network of networks, allowing computers to communicate and exchange data with each other. As illustrated, the analysis of this physical layer can already be interesting for social science research. The vast majority of social science research based on web data, however, is focused/based on the actual content of the Internet, or more specifically, the World Wide Web. While web data mining both regarding the purely physical dimension of the Internet discussed above as well as regarding the actual content of the web thrives on the automation of data extraction and data collection, it is the social aspects of how content on the Internet is generated that makes web data mining truly exciting for the social sciences. Many important data sources for economists, political scientists, sociologists etc. are and have been available and accessible without the need for web automation. However, web data mining allows us to a certain degree to directly 'observe' social and economic processes online as well as systematically collect data on various aspects of every-day human life for which no standardized data set yet exists. Thereby, the logic of how the data is generated online directly or indirectly by users pursuing their own goals (e.g., buying or selling something on eBay, writing a blog post, commenting on a newspaper article, following another twitter user) has various advantages over traditional data sources in the social sciences. This is particularly true for [observational data](https://en.wikipedia.org/wiki/Observational_study) which plays a major role in empirical economic research.
+
+## Economic data generating processes online
+One of the main reasons making the Internet an interesting data source for economic research is that the availability of information on economic interactions (e.g., between buyer and seller, politician and voter, author and publisher, etc.) is a core part of the business model of commercial websites (or of the raison d'être of non-commercial websites). Thus the social/economic (not the *technical* or *legal*) aspects necessary to make a website work often demand a certain degree of transparency regarding the information involved in the social/economic interactions happening on that website. @edelman_2012[p. 190] illustrates this point in the context of consumer goods and online auctions: "Consumers and competitors push websites to post remarkable amounts of information online. For example, most retail booksellers would hesitate to share information about which items they sold. Yet eBay posts the full bid history for every item offered for sale, and Amazon updates its rankings of top-selling items every hour."
+
+The following list gives an overview of the various ways automated data extraction from the web has serverd as a basis for research projects in different subfields of economics (based on @edelman_2012):
+
+
+* **Microeconomics**. @bajari_hortacsu2003 [“The Winner’s Curse, Reserve Prices, and Endogenous Entry: Empirical Insights from eBay Auctions.”](http://people.hss.caltech.edu/~mshum/ec106/bajhortacsu.pdf): Bid data from coin sales on eBay reveal bidder behavior in auctions, including the magnitude of the winner’s curse.
+* **Macroeconomics and Monetary Economics**. @cavallo_2016. [“Scraped Data and Sticky Prices.”](http://www.nber.org/papers/w21490): Daily price data from online supermarkets reveal price adjustment and price stickiness.
+* **Financial Economics**. @antweiler_frank2004. [“Is All That Talk Just Noise? The Information Content of Internet Stock Message Boards.”](https://www.jstor.org/stable/3694736?seq=1#page_scan_tab_contents): Finds that online discussions help predict market volatility; effects on stock returns are statistically significant but economically small.
+* **Health, Education, and Welfare**. @ginsberg_etal2009 [“Detecting Influenza Epidemics Using Search Engine Query Data.”](http://www.nature.com/nature/journal/v457/n7232/full/nature07634.html?foxtrotcallback=true): Trends in users’ web searches identify influenza epidemics.
+* **Industrial Organization**. @chevalier_2003. [“Measuring Prices and Price Competition Online: Amazon.com vs. BarnesandNoble.com.”](https://link.springer.com/article/10.1023/A:1024634613982): Uses publicly available price and rank data to estimate demand elasticities at two leading sellers of online books, finding greater price sensitivity at Barnes & Noble than at Amazon.
+
+#Course Content, Goals, and Structure
+Performing web mining tasks effectively and efficiently demands basic understanding of web technologies. Thus, before we delve into the practical application of R to scrape data from websites, this course introduces you to the necessary basic concepts. While getting familiar with the basics of web technologies, you will get in contact with various access points (i.e., different layers) for web based data collection as well as develop ideas for potentially relevant research questions in these contexts.
+
+Building on the understanding of where what data is available in the web, students are introduced to basic concepts and practical tools to harvest these data. Practical exercises and problem sets support the learning process at this stage of the course. In the second half of the course you will start your own empirical project based on web data in which you empirically tackle a simple research question of your choice. The term paper is both evaluated with respect to the demonstrated data collection skills as well as the scientific rigor of the empirical approach.
+
+## Course Goals
+The main goal of the course is to enable you to conduct automated data collection from web sources on your own, using free and open-source tools. You will get familiar with the advantages and disadvantages of extracting information from the Internet for scientific research. Finally, you get an opportunity to think about social science research questions with respect to human behavior that is particularly observable on the web (i.e., in social media, blogs, etc.).
+
+## Course Structure
+Lectures take place in the computer lab on a weekly basis during the
+semester. The course is structured as follows:
+
+1.  The Internet as a data source for social science research
+2.  Introduction to web technologies I: HTTP, HTML, and client/server
+    interaction.
+3.  Web scraping: automated information extraction from websites
+    a.  R tools for web scraping
+    b.  Fetching and parsing websites
+    c.  Searching/filtering HTML
+4.  Introduction to web technologies II: JSON/XML, Web applications, and
+    APIs.
+5.  Collecting data from the programmable web
+    a.  Social media and web APIs
+    b.  Parsing/filtering JSON and XML
+6.  Scrapers, Spiders, Crawlers
+    a.  Efficiency, robustness, and good conduct
+    b.  Crawler strategies and algorithms
+7.  Web mining ethics and legal guidelines
+8.  Web mining and scientific rigor: data quality, sampling,
+    reproducibility
+
+
+## Exam Information
+- Term paper including documented code (individual) (80%): Students apply web-mining techniques to collect data in order to tackle a simple social science research question of their choice. Students derive a research question, explain the data collection strategy, describe the collected data, discuss the empirical strategy, execute a short empirical analysis, and discuss the results. The paper should be short and to the point (max. 4000 words). Students also hand in their documented web-mining code.
+- Two problem sets (each 10%): Students demonstrate their acquired skills by solving different exercises related to the automated collection of data from web sources. The first problem set is aimed at collecting data from websites, the second problem set is focused on topics surrounding the collection of data from web applications related to social media. The problem sets are generally aimed at deepening the material covered in class as well as improve the students' practical web mining skills.
+
+# References
