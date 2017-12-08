@@ -1,6 +1,10 @@
-#Downlead Data of Cooparations
+
 #install.packages("Quandl")
+#install.packages('quantmod')
 library(Quandl)
+require(quantmod)
+
+#Downlead Data of Cooparations
 
 #Loading data from Quandl
 
@@ -50,3 +54,10 @@ a = merge(x= BA, y=BAH, by= "date", all.x= T)
 
 b= subset(a,date>sp_date) #table with begining after specific date
 
+#Market index
+
+getSymbols.yahoo("^GSPC",.GlobalEnv, from = sp_date) #S&P 500
+
+#♣Risk Free asset 
+
+RF =Quandl("FRED/DTB3") # 3-Month Treasury Bill: Secondary Market Rate
